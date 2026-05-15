@@ -20,7 +20,9 @@ keywords = ["inventree", "plugin"]
 requires-python = ">=3.9"
 dependencies = [
     # Enter your plugin library dependencies here
+    "requests",
 ]
+
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -51,3 +53,4 @@ exclude = [
 ]
 
 src=["inventreetohomeassistant"]
+
