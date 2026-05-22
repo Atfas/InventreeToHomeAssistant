@@ -23,7 +23,7 @@ class InventreeToHomeAssistant(EventMixin, SettingsMixin, InvenTreePlugin):
         "HA_URL": {
             "name": "Home Assistant URL",
             "description": "Base URL of your Home Assistant instance (e.g. http://homeassistant.local:8123)",
-            "default": "http://homeassistant.local:8123",
+            "default": "",
         },
         "HA_TOKEN": {
             "name": "Long-Lived Access Token",
