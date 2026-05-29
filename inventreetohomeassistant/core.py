@@ -4,6 +4,7 @@ import requests
 from plugin import InvenTreePlugin
 from plugin.mixins import EventMixin, SettingsMixin
 
+
 class InventreeToHomeAssistant(EventMixin, SettingsMixin, InvenTreePlugin):
     """InventreeToHomeAssistant - custom InvenTree plugin."""
 
@@ -11,7 +12,7 @@ class InventreeToHomeAssistant(EventMixin, SettingsMixin, InvenTreePlugin):
     NAME = "InventreeToHomeAssistant"
     SLUG = "inventreetohomeassistant"
     DESCRIPTION = "Send data to HA when a sublocation name is updated on InvenTree"
-    VERSION = "3.0.0"
+    VERSION = "2.2.0"
 
     AUTHOR = "Afonso Saraiva, Daniel Marques, Inês Francisco, Hugo Silva"
     WEBSITE = "https://inventreetohomeassistant.com"
@@ -29,6 +30,11 @@ class InventreeToHomeAssistant(EventMixin, SettingsMixin, InvenTreePlugin):
         "HA_TOKEN": {
             "name": "Long-Lived Access Token",
             "description": "Bearer token for Home Assistant API authentication",
+            "default": "",
+        },
+        "HA_AUTOMATION_ENTITY": {
+            "name": "Automation Entity ID",
+            "description": "The HA automation entity to trigger (e.g. automation.inventree_gaveta_update)",
             "default": "",
         },
     }
@@ -70,7 +76,7 @@ class InventreeToHomeAssistant(EventMixin, SettingsMixin, InvenTreePlugin):
         return event == "stock_stocklocation.saved"
 
     def process_event(self, event: str, *args, **kwargs) -> None:
-        """Check description for tag_id and call HA drawcustom directly."""
+        """Check description for tag_id and trigger HA automation."""
         from stock.models import StockLocation
 
         location_id = kwargs.get("id")
@@ -91,58 +97,25 @@ class InventreeToHomeAssistant(EventMixin, SettingsMixin, InvenTreePlugin):
 
         ha_url = self.get_setting("HA_URL").rstrip("/")
         ha_token = self.get_setting("HA_TOKEN")
+        entity_id = self.get_setting("HA_AUTOMATION_ENTITY")
 
-        url = f"{ha_url}/api/services/open_epaper_link/drawcustom"
+        url = f"{ha_url}/api/services/automation/trigger"
         headers = {
             "Authorization": f"Bearer {ha_token}",
             "Content-Type": "application/json",
         }
         payload = {
-            "rotate": 0,
-            "dither": "0",
-            "ttl": 60,
-            "refresh_type": "0",
-            "dry-run": False,
-            "background": "white",
-            "payload": [
-                {
-                    "type": "dlimg",
-                    "url": "https://www.healthclusterportugal.pt/media/uploads/2022/06/30/FraunhoferPortugal_i3T72fk.png.768x768_q95_upscale.png",
-                    "x": 4,
-                    "y": 4,
-                    "xsize": 40,
-                    "ysize": 40,
-                    "rotate": 0,
-                },
-                {
-                    "type": "text",
-                    "value": drawer_title,
-                    "x": 4,
-                    "y": 55,
-                    "anchor": "lm",
-                    "size": 18,
-                    "color": "black",
-                    "font": "ppb.ttf",
-                },
-                {
-                    "type": "qrcode",
-                    "data": str(location_id),
-                    "x": 170,
-                    "y": 4,
-                    "boxsize": 3,
-                    "border": 1,
-                    "color": "black",
-                    "bgcolor": "white",
-                },
-            ],
-            "target": {
+            "entity_id": entity_id,
+            "variables": {
                 "device_id": device_id,
+                "drawer_title": drawer_title,
+                "qr_text": str(location_id),
             },
         }
 
         try:
             response = requests.post(url, json=payload, headers=headers, timeout=10)
             response.raise_for_status()
-            print(f"[HA Plugin] Sent drawcustom for '{drawer_title}' (device: {device_id})")
+            print(f"[HA Plugin] Triggered automation for '{location_id}' on '{drawer_title}' (device: {device_id})")
         except requests.RequestException as e:
-            print(f"[HA Plugin] Failed to call drawcustom: {e}")
+            print(f"[HA Plugin] Failed to trigger HA automation: {e}")
