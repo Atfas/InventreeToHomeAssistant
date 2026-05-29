@@ -13,7 +13,7 @@ class InventreeToHomeAssistant(EventMixin, SettingsMixin, InvenTreePlugin):
     NAME = "InventreeToHomeAssistant"
     SLUG = "inventreetohomeassistant"
     DESCRIPTION = "Send data to HA when a sublocation name is updated on InvenTree"
-    VERSION = PLUGIN_VERSION
+    VERSION = "2.0.0"
 
     AUTHOR = "Afonso Saraiva, Daniel Marques, Inês Francisco, Hugo Silva"
     WEBSITE = "https://inventreetohomeassistant.com"
