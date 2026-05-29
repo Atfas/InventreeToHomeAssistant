@@ -19,6 +19,8 @@ class InventreeToHomeAssistant(EventMixin, SettingsMixin, InvenTreePlugin):
     WEBSITE = "https://inventreetohomeassistant.com"
     LICENSE = "MIT"
 
+    MAX_LINE_LENGTH = 11
+
     SETTINGS = {
         "HA_URL": {
             "name": "Home Assistant URL",
@@ -36,6 +38,38 @@ class InventreeToHomeAssistant(EventMixin, SettingsMixin, InvenTreePlugin):
             "default": "automation.inventree_gaveta_update",
         },
     }
+
+    def format_title(self, name: str) -> str:
+        """
+        Format a location name for display on a small e-paper tag.
+        - If <= MAX_LINE_LENGTH chars: use as-is
+        - If it has spaces: break at spaces so each line <= MAX_LINE_LENGTH
+        - If it's one long word: truncate with '...' at MAX_LINE_LENGTH
+        """
+        if len(name) <= self.MAX_LINE_LENGTH:
+            return name
+
+        words = name.split(" ")
+
+        # Single word too long — truncate
+        if len(words) == 1:
+            return name[: self.MAX_LINE_LENGTH - 3] + "..."
+
+        # Multiple words — pack words into lines greedily
+        lines = []
+        current = ""
+        for word in words:
+            if not current:
+                current = word
+            elif len(current) + 1 + len(word) <= self.MAX_LINE_LENGTH:
+                current += " " + word
+            else:
+                lines.append(current)
+                current = word
+        if current:
+            lines.append(current)
+
+        return "\n".join(lines)
 
     def wants_process_event(self, event: str) -> bool:
         """Only process StockLocation save events."""
@@ -58,8 +92,8 @@ class InventreeToHomeAssistant(EventMixin, SettingsMixin, InvenTreePlugin):
         if not description.startswith("tag_id:"):
             return
 
-        device_id = description[len("tag_id:") :].strip()
-        new_name = location.name
+        device_id = description[len("tag_id:"):].strip()
+        drawer_title = self.format_title(location.name)
 
         ha_url = self.get_setting("HA_URL").rstrip("/")
         ha_token = self.get_setting("HA_TOKEN")
@@ -74,15 +108,14 @@ class InventreeToHomeAssistant(EventMixin, SettingsMixin, InvenTreePlugin):
             "entity_id": entity_id,
             "variables": {
                 "device_id": device_id,
-                "message": new_name,
+                "drawer_title": drawer_title,
+                "qr_text": str(location_id),
             },
         }
 
         try:
             response = requests.post(url, json=payload, headers=headers, timeout=10)
             response.raise_for_status()
-            print(
-                f"[HA Plugin] Triggered automation for '{new_name}' (device: {device_id})"
-            )
+            print(f"[HA Plugin] Triggered automation for '{drawer_title}' (device: {device_id})")
         except requests.RequestException as e:
             print(f"[HA Plugin] Failed to trigger HA automation: {e}")
