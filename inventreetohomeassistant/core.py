@@ -18,7 +18,7 @@ class InventreeToHomeAssistant(EventMixin, SettingsMixin, InvenTreePlugin):
     AUTHOR = "Afonso Saraiva, Daniel Marques, Inês Francisco, Hugo Silva"
     WEBSITE = "https://inventreetohomeassistant.com"
     LICENSE = "MIT"
-
+    PUBLISH_DATE = "2026-05-29"
     MAX_LINE_LENGTH = 11
 
     SETTINGS = {
