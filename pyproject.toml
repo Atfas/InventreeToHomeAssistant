@@ -12,7 +12,7 @@ name = "InventreeToHomeAssistant"
 description = "Small plugin to send data to HA when certain sublocations are updated on Inventree"
 dynamic = ["version"]
 authors = [
-    { name = "Afonso Saraiva,Daniel Marques, Inês Francisco, Hugo Silva",email = "afonsosaraiva9@gmail.com" },
+    { name = "Ash, Afonso Saraiva,Daniel Marques, Inês Francisco, Hugo Silva",email = "afonsosaraiva9@gmail.com" },
 ]
 readme = "README.md"
 license = "MIT"
